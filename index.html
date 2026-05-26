@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sicilia · 21–30 julio · Itinerario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --ink:#1a1a1a;
+  --paper:#f4ead5;
+  --cream:#ebe0c5;
+  --sea:#2c5f7c;
+  --sea-deep:#143042;
+  --terra:#c84b31;
+  --terra-deep:#8b3220;
+  --gold:#c89b3c;
+  --olive:#7a8450;
+  --shadow:rgba(20,48,66,.15);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:18px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    radial-gradient(circle at 20% 30%,rgba(200,75,49,.04) 0%,transparent 50%),
+    radial-gradient(circle at 80% 70%,rgba(44,95,124,.05) 0%,transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* HEADER */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:3rem 5vw 2rem;
+  z-index:1;
+}
+.hero::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--ink) 20%,var(--ink) 80%,transparent);
+}
+.top-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.top-bar span{opacity:.6}
+.hero-content{
+  margin:auto 0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4rem;
+  align-items:end;
+}
+.hero-title{
+  font-family:'Fraunces',serif;
+  font-weight:300;
+  font-size:clamp(4rem,11vw,11rem);
+  line-height:.85;
+  letter-spacing:-.04em;
+}
+.hero-title em{
+  font-style:italic;
+  font-weight:400;
+  color:var(--terra);
+}
+.hero-subtitle{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:1.4rem;
+  font-weight:400;
+  line-height:1.5;
+  max-width:35ch;
+  border-left:2px solid var(--terra);
+  padding-left:1.25rem;
+  color:var(--sea-deep);
+}
+.hero-subtitle::before{
+  content:'«';
+  font-size:2.5rem;
+  color:var(--terra);
+  vertical-align:-.3em;
+  margin-right:.2em;
+  line-height:0;
+}
+.hero-meta{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:2rem;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.75rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  padding-top:2rem;
+  border-top:1px solid rgba(26,26,26,.2);
+}
+.hero-meta div{display:flex;flex-direction:column;gap:.3rem}
+.hero-meta strong{
+  font-family:'Fraunces',serif;
+  font-size:1.5rem;
+  font-weight:600;
+  letter-spacing:-.02em;
+  text-transform:none;
+  color:var(--terra);
+}
+
+/* NAV */
+nav.sticky{
+  position:sticky;
+  top:0;
+  background:var(--paper);
+  border-bottom:1px solid rgba(26,26,26,.15);
+  z-index:100;
+  padding:1rem 5vw;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  display:flex;
+  gap:.5rem;
+  overflow-x:auto;
+  scrollbar-width:none;
+  backdrop-filter:blur(8px);
+  background:rgba(244,234,213,.95);
+}
+nav.sticky::-webkit-scrollbar{display:none}
+nav.sticky a{
+  color:var(--ink);
+  text-decoration:none;
+  padding:.5rem .85rem;
+  border-radius:2px;
+  transition:all .2s;
+  white-space:nowrap;
+  border:1px solid transparent;
+}
+nav.sticky a:hover{
+  background:var(--terra);
+  color:var(--paper);
+}
+
+/* MAP */
+.map-section{
+  padding:5rem 5vw;
+  position:relative;
+  z-index:1;
+}
+.section-title{
+  font-family:'Fraunces',serif;
+  font-weight:300;
+  font-size:clamp(2.5rem,6vw,4.5rem);
+  letter-spacing:-.03em;
+  margin-bottom:.5rem;
+  line-height:1;
+}
+.section-title em{font-style:italic;color:var(--terra)}
+.section-kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  color:var(--sea-deep);
+  opacity:.7;
+  margin-bottom:1rem;
+}
+.map-wrapper{
+  margin-top:2.5rem;
+  height:70vh;
+  min-height:500px;
+  position:relative;
+  border:1px solid var(--ink);
+  box-shadow:8px 8px 0 var(--terra);
+  overflow:hidden;
+}
+#map{height:100%;width:100%}
+.map-legend{
+  position:absolute;
+  bottom:1rem;
+  left:1rem;
+  background:var(--paper);
+  padding:1rem 1.25rem;
+  border:1px solid var(--ink);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  z-index:500;
+  max-width:200px;
+}
+.map-legend strong{
+  display:block;
+  font-family:'Fraunces',serif;
+  font-size:.9rem;
+  font-weight:600;
+  text-transform:none;
+  letter-spacing:0;
+  margin-bottom:.5rem;
+}
+
+/* STATS */
+.stats{
+  background:var(--ink);
+  color:var(--paper);
+  padding:4rem 5vw;
+  position:relative;
+  z-index:1;
+}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:3rem;
+  max-width:1400px;
+  margin:0 auto;
+}
+.stat{
+  display:flex;
+  flex-direction:column;
+  gap:.5rem;
+}
+.stat-number{
+  font-family:'Fraunces',serif;
+  font-size:clamp(2.5rem,5vw,4rem);
+  font-weight:300;
+  line-height:1;
+  color:var(--gold);
+  font-style:italic;
+}
+.stat-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  opacity:.7;
+}
+
+/* DAYS */
+.days-section{
+  padding:6rem 5vw;
+  position:relative;
+  z-index:1;
+}
+.day{
+  display:grid;
+  grid-template-columns:120px 1fr 1fr;
+  gap:3rem;
+  padding:3rem 0;
+  border-bottom:1px solid rgba(26,26,26,.15);
+  position:relative;
+}
+.day:last-child{border-bottom:none}
+.day-number{
+  font-family:'Fraunces',serif;
+  font-size:5rem;
+  font-weight:300;
+  line-height:.9;
+  color:var(--terra);
+  font-style:italic;
+}
+.day-date{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.7rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--sea-deep);
+  opacity:.7;
+  margin-top:.5rem;
+}
+.day-main h3{
+  font-family:'Fraunces',serif;
+  font-weight:400;
+  font-size:2rem;
+  line-height:1.1;
+  margin-bottom:.75rem;
+  letter-spacing:-.01em;
+}
+.day-narrative{
+  font-style:italic;
+  color:var(--sea-deep);
+  font-size:1.1rem;
+  line-height:1.5;
+  margin-bottom:1.5rem;
+}
+.day-base{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  background:var(--cream);
+  padding:.4rem .8rem;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  border:1px solid var(--ink);
+}
+.day-base::before{
+  content:'';
+  width:6px;height:6px;
+  background:var(--terra);
+  border-radius:50%;
+}
+.day-stops{
+  list-style:none;
+}
+.day-stops li{
+  position:relative;
+  padding-left:1.5rem;
+  padding-bottom:1rem;
+  margin-bottom:1rem;
+  border-left:1px dashed rgba(26,26,26,.25);
+  padding-bottom:1.25rem;
+}
+.day-stops li:last-child{border-left:1px dashed transparent;padding-bottom:0}
+.day-stops li::before{
+  content:'';
+  position:absolute;
+  left:-4px;
+  top:.4rem;
+  width:7px;height:7px;
+  background:var(--terra);
+  border-radius:50%;
+}
+.stop-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  letter-spacing:.15em;
+  color:var(--terra);
+  display:block;
+  margin-bottom:.15rem;
+}
+.stop-name{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:1.1rem;
+  line-height:1.2;
+  margin-bottom:.25rem;
+}
+.stop-note{
+  font-size:.95rem;
+  line-height:1.5;
+  color:rgba(26,26,26,.75);
+}
+
+/* TIPS */
+.tips-section{
+  background:var(--sea-deep);
+  color:var(--paper);
+  padding:6rem 5vw;
+  position:relative;
+  z-index:1;
+}
+.tips-section .section-title{color:var(--paper)}
+.tips-section .section-title em{color:var(--gold)}
+.tips-section .section-kicker{color:var(--gold);opacity:1}
+.tips-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:2.5rem;
+  margin-top:3rem;
+}
+.tip{
+  border-top:2px solid var(--gold);
+  padding-top:1.5rem;
+}
+.tip-icon{
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:3rem;
+  font-weight:300;
+  line-height:1;
+  color:var(--gold);
+  margin-bottom:.5rem;
+}
+.tip h4{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:1.3rem;
+  margin-bottom:.75rem;
+}
+.tip p{
+  font-size:1rem;
+  line-height:1.6;
+  opacity:.85;
+}
+
+/* CHECKLIST */
+.check-section{
+  padding:6rem 5vw;
+  position:relative;
+  z-index:1;
+}
+.check-list{
+  margin-top:3rem;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:1rem;
+}
+.check{
+  display:flex;
+  gap:1rem;
+  align-items:start;
+  padding:1.25rem 1.5rem;
+  background:var(--cream);
+  border:1px solid rgba(26,26,26,.15);
+  cursor:pointer;
+  transition:all .2s;
+}
+.check:hover{
+  background:var(--paper);
+  border-color:var(--ink);
+  transform:translateX(2px);
+}
+.check input{
+  margin-top:.25rem;
+  width:18px;height:18px;
+  cursor:pointer;
+  accent-color:var(--terra);
+}
+.check label{
+  flex:1;
+  cursor:pointer;
+}
+.check-title{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:1.1rem;
+  display:block;
+  margin-bottom:.25rem;
+}
+.check-detail{
+  font-size:.9rem;
+  color:rgba(26,26,26,.7);
+}
+.check input:checked + label .check-title{
+  text-decoration:line-through;
+  opacity:.5;
+}
+
+/* FOOTER */
+footer{
+  background:var(--ink);
+  color:var(--paper);
+  padding:4rem 5vw 2rem;
+  position:relative;
+  z-index:1;
+}
+.footer-mark{
+  font-family:'Fraunces',serif;
+  font-size:clamp(3rem,8vw,6rem);
+  font-weight:300;
+  font-style:italic;
+  line-height:.9;
+  color:var(--gold);
+  letter-spacing:-.03em;
+}
+.footer-mark span{color:var(--terra)}
+.footer-meta{
+  margin-top:3rem;
+  padding-top:2rem;
+  border-top:1px solid rgba(244,234,213,.2);
+  display:flex;
+  justify-content:space-between;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  opacity:.6;
+  flex-wrap:wrap;
+  gap:1rem;
+}
+
+/* Leaflet customization */
+.leaflet-popup-content-wrapper{
+  background:var(--paper);
+  color:var(--ink);
+  border-radius:0;
+  border:1px solid var(--ink);
+  box-shadow:4px 4px 0 var(--terra);
+  font-family:'Cormorant Garamond',serif;
+}
+.leaflet-popup-content{
+  font-size:.95rem;
+  margin:.85rem 1.1rem;
+}
+.leaflet-popup-content strong{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:1.05rem;
+  display:block;
+  margin-bottom:.2rem;
+  color:var(--terra-deep);
+}
+.leaflet-popup-content em{
+  font-family:'JetBrains Mono',monospace;
+  font-style:normal;
+  font-size:.65rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--sea-deep);
+  display:block;
+  margin-bottom:.4rem;
+  opacity:.7;
+}
+.leaflet-popup-tip{background:var(--paper);border:1px solid var(--ink)}
+.custom-marker{
+  background:var(--terra);
+  color:var(--paper);
+  width:32px;height:32px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:.95rem;
+  border:2px solid var(--ink);
+  box-shadow:2px 2px 0 var(--ink);
+}
+
+/* RESPONSIVE */
+@media (max-width:900px){
+  .hero-content{grid-template-columns:1fr;gap:2rem}
+  .hero-meta{grid-template-columns:repeat(2,1fr);gap:1.5rem}
+  .day{grid-template-columns:1fr;gap:1.5rem}
+  .day-number{font-size:3.5rem}
+  .footer-meta{flex-direction:column}
+  .map-legend{position:relative;left:auto;bottom:auto;margin:1rem;max-width:none}
+}
+@media (max-width:600px){
+  body{font-size:16px}
+  .hero{padding:1.5rem 5vw}
+  .hero-meta{grid-template-columns:1fr 1fr;gap:1rem;font-size:.65rem}
+  .hero-meta strong{font-size:1.2rem}
+  .section-title{font-size:2.2rem}
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="top-bar">
+    <span>·  Bitácora de viaje  ·</span>
+    <span>MMXXVI</span>
+  </div>
+  <div class="hero-content">
+    <h1 class="hero-title">Sicilia<br><em>en nueve</em><br>días</h1>
+    <div>
+      <p class="hero-subtitle">Desde los mosaicos normandos de Palermo hasta los pueblos barrocos del sureste, pasando por las islas Eolias y la cima del Etna.</p>
+      <div class="hero-meta">
+        <div><span>Fechas</span><strong>21–30 Jul</strong></div>
+        <div><span>Grupo</span><strong>8 pax</strong></div>
+        <div><span>Distancia</span><strong>~996 km</strong></div>
+        <div><span>Bases</span><strong>5 ciudades</strong></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="sticky">
+  <a href="#mapa">Mapa</a>
+  <a href="#dia-1">D1 · Palermo</a>
+  <a href="#dia-2">D2 · Palermo+Monreale</a>
+  <a href="#dia-3">D3 · San Vito</a>
+  <a href="#dia-4">D4 · Zingaro→Cefalù</a>
+  <a href="#dia-5">D5 · Cefalù</a>
+  <a href="#dia-6">D6 · Eolias</a>
+  <a href="#dia-7">D7 · Taormina</a>
+  <a href="#dia-8">D8 · Etna→Siracusa</a>
+  <a href="#dia-9">D9 · Ortigia</a>
+  <a href="#dia-10">D10 · Barrocos</a>
+  <a href="#consejos">Consejos</a>
+  <a href="#checklist">Reservas</a>
+</nav>
+
+<!-- MAP -->
+<section class="map-section" id="mapa">
+  <p class="section-kicker">— Cartografía del viaje</p>
+  <h2 class="section-title">El <em>mapa</em></h2>
+  <div class="map-wrapper">
+    <div id="map"></div>
+    <div class="map-legend">
+      <strong>Ruta circular</strong>
+      Palermo → Scopello → Cefalù → Milazzo → Taormina → Siracusa → Catania
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat"><span class="stat-number">10</span><span class="stat-label">Días</span></div>
+    <div class="stat"><span class="stat-number">5</span><span class="stat-label">Bases</span></div>
+    <div class="stat"><span class="stat-number">3</span><span class="stat-label">Días sin coche</span></div>
+    <div class="stat"><span class="stat-number">996</span><span class="stat-label">Kilómetros</span></div>
+    <div class="stat"><span class="stat-number">2</span><span class="stat-label">Islas Eolias</span></div>
+    <div class="stat"><span class="stat-number">3</span><span class="stat-label">Pueblos UNESCO</span></div>
+  </div>
+</section>
+
+<!-- DAYS -->
+<section class="days-section">
+  <p class="section-kicker">— Día por día</p>
+  <h2 class="section-title">El <em>itinerario</em></h2>
+
+  <article class="day" id="dia-1">
+    <div><div class="day-number">I</div><div class="day-date">21 julio · lunes</div></div>
+    <div class="day-main">
+      <h3>Llegada a Palermo</h3>
+      <p class="day-narrative">Llegáis tarde. Recoger coches, alojamiento y cena nocturna en el centro.</p>
+      <span class="day-base">Palermo · noche 1/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">19:10 · Aeropuerto</span><div class="stop-name">Falcone–Borsellino</div><p class="stop-note">Recoger 2 coches (mejor que un monovolumen de 8: más maniobrabilidad en ZTL). 35–45 min al centro.</p></li>
+      <li><span class="stop-time">20:30 · Cena</span><div class="stop-name">Centro histórico</div><p class="stop-note">Zona Vucciria o Piazza Marina. Arancino y pasta con sardinas obligatorios.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-2">
+    <div><div class="day-number">II</div><div class="day-date">22 julio · martes</div></div>
+    <div class="day-main">
+      <h3>Palermo a fondo + Monreale</h3>
+      <p class="day-narrative">Día urbano completo. Mercado por la mañana, monumentos y Monreale a última hora cuando baja el calor.</p>
+      <span class="day-base">Palermo · noche 2/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">09:30</span><div class="stop-name">Mercato Ballarò</div><p class="stop-note">Desayuno siciliano: pani ca' meusa, granita con brioche. Temprano antes del calor.</p></li>
+      <li><span class="stop-time">11:30</span><div class="stop-name">Cattedrale di Palermo</div><p class="stop-note">Subir al tejado por las vistas (5–7€).</p></li>
+      <li><span class="stop-time">13:00</span><div class="stop-name">Palazzo Normanni + Cappella Palatina</div><p class="stop-note">Mosaicos bizantinos. Comida en Piazza Bologni.</p></li>
+      <li><span class="stop-time">16:30</span><div class="stop-name">Quattro Canti · Fontana Pretoria</div><p class="stop-note">Corazón barroco de Palermo.</p></li>
+      <li><span class="stop-time">18:00</span><div class="stop-name">Cattedrale di Monreale</div><p class="stop-note">20 min en coche. Mosaicos dorados épicos. Reabre 14h.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-3">
+    <div><div class="day-number">III</div><div class="day-date">23 julio · miércoles</div></div>
+    <div class="day-main">
+      <h3>Palermo → San Vito → Scopello</h3>
+      <p class="day-narrative">Día de playa top y traslado corto a Scopello para dormir al lado de la Riserva dello Zingaro.</p>
+      <span class="day-base">Scopello · 1 noche</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">09:30 · Salida</span><div class="stop-name">Check-out Palermo</div><p class="stop-note">1h30 a San Vito Lo Capo.</p></li>
+      <li><span class="stop-time">11:00–16:30</span><div class="stop-name">Spiaggia San Vito Lo Capo</div><p class="stop-note">Arena blanca, agua turquesa. Comida en chiringuito: cuscús de pescado, especialidad local.</p></li>
+      <li><span class="stop-time">17:30 · Cena</span><div class="stop-name">Scopello / Castellammare del Golfo</div><p class="stop-note">Agriturismo o B&amp;B, mucho más barato que San Vito.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-4">
+    <div><div class="day-number">IV</div><div class="day-date">24 julio · jueves</div></div>
+    <div class="day-main">
+      <h3>Zingaro → Cefalù</h3>
+      <p class="day-narrative">Mañana en la reserva natural disfrutando, tarde de traslado a Cefalù con margen.</p>
+      <span class="day-base">Cefalù · noche 1/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">08:30–13:30</span><div class="stop-name">Riserva dello Zingaro</div><p class="stop-note">10 min desde Scopello. Llegar pronto, calas vírgenes. Entrada 5€. Agua, snorkel y calzado.</p></li>
+      <li><span class="stop-time">14:00</span><div class="stop-name">Comida en Scopello</div><p class="stop-note">Ligero y recoger maletas.</p></li>
+      <li><span class="stop-time">16:00–18:30</span><div class="stop-name">Traslado a Cefalù</div><p class="stop-note">2h30 por autopista. Check-in y cena en el casco antiguo.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-5">
+    <div><div class="day-number">V</div><div class="day-date">25 julio · viernes</div></div>
+    <div class="day-main">
+      <h3>Cefalù relax</h3>
+      <p class="day-narrative">Día sin coche: pueblo medieval, catedral normanda, playa y atardecer en lo alto.</p>
+      <span class="day-base">Cefalù · noche 2/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">10:00</span><div class="stop-name">Duomo di Cefalù</div><p class="stop-note">Joya normanda con mosaicos espectaculares.</p></li>
+      <li><span class="stop-time">11:30–17:00</span><div class="stop-name">Playa de Cefalù</div><p class="stop-note">Playa urbana con vistas a la Rocca. Comida en chiringuito.</p></li>
+      <li><span class="stop-time">18:30</span><div class="stop-name">La Rocca di Cefalù</div><p class="stop-note">Subida de 45 min al atardecer. Vistas brutales.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-6">
+    <div><div class="day-number">VI</div><div class="day-date">26 julio · sábado</div></div>
+    <div class="day-main">
+      <h3>Excursión Islas Eolias</h3>
+      <p class="day-narrative">El gran día del archipiélago. Salida temprana, dos islas, vuelta sin estrés a tierra firme.</p>
+      <span class="day-base">Milazzo · 1 noche</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">08:00 · Check-out</span><div class="stop-name">Cefalù → Milazzo</div><p class="stop-note">1h45 en coche.</p></li>
+      <li><span class="stop-time">10:00</span><div class="stop-name">Terminal traghetti Milazzo</div><p class="stop-note">Hidrofoil Liberty Lines (~25–30€/pax). Reservar online con antelación.</p></li>
+      <li><span class="stop-time">11:00–14:30</span><div class="stop-name">Lipari</div><p class="stop-note">Pueblo principal, calas (Spiaggia Bianca), comida de pescado fresco.</p></li>
+      <li><span class="stop-time">14:30–18:30</span><div class="stop-name">Vulcano</div><p class="stop-note">Subida al cráter (1h ida y vuelta) o baño en playa negra.</p></li>
+      <li><span class="stop-time">20:00 · Cena</span><div class="stop-name">Milazzo</div><p class="stop-note">Sin paliza nocturna.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-7">
+    <div><div class="day-number">VII</div><div class="day-date">27 julio · domingo</div></div>
+    <div class="day-main">
+      <h3>Taormina + Isola Bella</h3>
+      <p class="day-narrative">Traslado corto y día de la joya del este. Cultura por la mañana, playa por la tarde.</p>
+      <span class="day-base">Taormina · 1 noche</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">10:00</span><div class="stop-name">Milazzo → Taormina</div><p class="stop-note">45 min.</p></li>
+      <li><span class="stop-time">11:00</span><div class="stop-name">Taormina centro</div><p class="stop-note">OJO con ZTL: aparcar en Lumbi o Porta Catania. Paseo por Corso Umberto.</p></li>
+      <li><span class="stop-time">13:30</span><div class="stop-name">Teatro Antico di Taormina</div><p class="stop-note">Teatro griego con vistas al Etna y al mar. Entradas online (16€).</p></li>
+      <li><span class="stop-time">16:00–20:30</span><div class="stop-name">Spiaggia di Isola Bella</div><p class="stop-note">Bajar en funicular. Baño y atardecer en una de las playas más bonitas de Sicilia.</p></li>
+      <li><span class="stop-time">21:00 · Cena</span><div class="stop-name">Taormina o Giardini Naxos</div><p class="stop-note">Trattorias en Vico Stretto. Giardini Naxos más barato.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-8">
+    <div><div class="day-number">VIII</div><div class="day-date">28 julio · lunes</div></div>
+    <div class="day-main">
+      <h3>Etna → Siracusa</h3>
+      <p class="day-narrative">Etna por la mañana cuando hace menos calor, comida ligera en falda del volcán, traslado a Siracusa.</p>
+      <span class="day-base">Siracusa · noche 1/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">08:30 · Check-out</span><div class="stop-name">Taormina → Rifugio Sapienza</div><p class="stop-note">1h15. Llevar chaqueta (fresco a 2000m).</p></li>
+      <li><span class="stop-time">10:00–14:00</span><div class="stop-name">Etna · Rifugio Sapienza</div><p class="stop-note">Premium: funicular + 4x4 + guía (~63€). Barata: senderismo libre por los Crateri Silvestri (gratis).</p></li>
+      <li><span class="stop-time">15:00 · Comida</span><div class="stop-name">Zafferana Etnea / Nicolosi</div><p class="stop-note">Pistacho de Bronte, miel, vino del Etna.</p></li>
+      <li><span class="stop-time">17:30</span><div class="stop-name">Llegada a Ortigia</div><p class="stop-note">1h30 de Etna. Ducha y cena en Ortigia.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-9">
+    <div><div class="day-number">IX</div><div class="day-date">29 julio · martes</div></div>
+    <div class="day-main">
+      <h3>Siracusa, Ortigia y fiesta</h3>
+      <p class="day-narrative">Día completo en una de las islas más mágicas del Mediterráneo. Cultura, baño, cena y la noche larga.</p>
+      <span class="day-base">Siracusa · noche 2/2</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">09:00</span><div class="stop-name">Parco Archeologico della Neapolis</div><p class="stop-note">Teatro griego, Oreja de Dionisio. Temprano por el calor (entrada 13€).</p></li>
+      <li><span class="stop-time">12:30–20:00</span><div class="stop-name">Isola di Ortigia</div><p class="stop-note">Mercado, Duomo (sobre templo griego), Fonte Aretusa. Baño en Cala Rossa al atardecer. Reservar cena para 8.</p></li>
+      <li><span class="stop-time">23:00 → tarde</span><div class="stop-name">Noche en Ortigia</div><p class="stop-note">Lungomare di Levante y Via Cavour. Ambiente top en la isla.</p></li>
+    </ul>
+  </article>
+
+  <article class="day" id="dia-10">
+    <div><div class="day-number">X</div><div class="day-date">30 julio · miércoles</div></div>
+    <div class="day-main">
+      <h3>Pueblos barrocos → vuelo</h3>
+      <p class="day-narrative">Tres pueblos UNESCO al filo de camino al aeropuerto. Ajustado pero perfectamente viable.</p>
+      <span class="day-base">Vuelo 17:00 desde Catania</span>
+    </div>
+    <ul class="day-stops">
+      <li><span class="stop-time">08:30 · Check-out</span><div class="stop-name">Siracusa → Noto</div><p class="stop-note">40 min. Maletas en el coche.</p></li>
+      <li><span class="stop-time">09:30</span><div class="stop-name">Noto · Cattedrale + Corso</div><p class="stop-note">Granita en Caffè Sicilia (legendario).</p></li>
+      <li><span class="stop-time">11:30</span><div class="stop-name">Modica · chocolate</div><p class="stop-note">Antica Dolceria Bonajuto + Sabadì. Comer ligero (cassatelle, scacce).</p></li>
+      <li><span class="stop-time">13:30</span><div class="stop-name">Ragusa Ibla · Duomo San Giorgio</div><p class="stop-note">Paseo rápido, foto desde Giardino Ibleo.</p></li>
+      <li><span class="stop-time">15:00 · Aeropuerto</span><div class="stop-name">Catania Fontanarossa</div><p class="stop-note">Devolver coches. Vuelo 17:00.</p></li>
+    </ul>
+  </article>
+</section>
+
+<!-- TIPS -->
+<section class="tips-section" id="consejos">
+  <p class="section-kicker">— Lo que no puede fallar</p>
+  <h2 class="section-title">Consejos <em>críticos</em></h2>
+  <div class="tips-grid">
+    <div class="tip">
+      <div class="tip-icon">i.</div>
+      <h4>Dos coches, no monovolumen</h4>
+      <p>Más maniobrabilidad en ZTL y pueblos. Un monovolumen de 9 plazas es más caro, peor de aparcar y muchas zonas históricas lo prohíben.</p>
+    </div>
+    <div class="tip">
+      <div class="tip-icon">ii.</div>
+      <h4>ZTL y multas</h4>
+      <p>Centros históricos con tráfico restringido en Palermo, Cefalù, Taormina, Ortigia y Ragusa Ibla. Alojamientos con plaza o parking público cerca. <strong>Nunca entrar sin permiso.</strong></p>
+    </div>
+    <div class="tip">
+      <div class="tip-icon">iii.</div>
+      <h4>Reservar Eolias YA</h4>
+      <p>Liberty Lines online. En julio se agotan las plazas. Comprar ida y vuelta misma compañía evita líos de horario.</p>
+    </div>
+    <div class="tip">
+      <div class="tip-icon">iv.</div>
+      <h4>Calor de 35–40°C</h4>
+      <p>Madrugar para cultura (8–11h), siesta/playa a mediodía, paseos a partir de las 18h. Agua, gorro y crema obligatorios.</p>
+    </div>
+    <div class="tip">
+      <div class="tip-icon">v.</div>
+      <h4>Cenas para grupo de 8</h4>
+      <p>Reservar con días de antelación, sobre todo en Ortigia, Taormina y Palermo. Las trattorias buenas no aceptan walk-ins en julio.</p>
+    </div>
+    <div class="tip">
+      <div class="tip-icon">vi.</div>
+      <h4>Alojamientos económicos</h4>
+      <p>Para 8 personas: apartamentos grandes en Airbnb/Booking (25–40€/pax/noche). Más barato que hoteles. Buscar con cocina y aire acondicionado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section class="check-section" id="checklist">
+  <p class="section-kicker">— Antes de salir</p>
+  <h2 class="section-title">Lista de <em>reservas</em></h2>
+  <div class="check-list">
+    <div class="check"><input type="checkbox" id="c1"><label for="c1"><span class="check-title">2 coches de alquiler</span><span class="check-detail">Recoger Palermo (21 jul) · Devolver Catania (30 jul)</span></label></div>
+    <div class="check"><input type="checkbox" id="c2"><label for="c2"><span class="check-title">Alojamiento Palermo</span><span class="check-detail">2 noches (21–22 jul) · zona Vucciria o Politeama</span></label></div>
+    <div class="check"><input type="checkbox" id="c3"><label for="c3"><span class="check-title">Alojamiento Scopello</span><span class="check-detail">1 noche (23 jul) · agriturismo o B&amp;B</span></label></div>
+    <div class="check"><input type="checkbox" id="c4"><label for="c4"><span class="check-title">Alojamiento Cefalù</span><span class="check-detail">2 noches (24–25 jul) · centro o afueras con piscina</span></label></div>
+    <div class="check"><input type="checkbox" id="c5"><label for="c5"><span class="check-title">Alojamiento Milazzo</span><span class="check-detail">1 noche (26 jul) · cerca del puerto</span></label></div>
+    <div class="check"><input type="checkbox" id="c6"><label for="c6"><span class="check-title">Alojamiento Taormina</span><span class="check-detail">1 noche (27 jul) · Giardini Naxos más barato</span></label></div>
+    <div class="check"><input type="checkbox" id="c7"><label for="c7"><span class="check-title">Alojamiento Siracusa</span><span class="check-detail">2 noches (28–29 jul) · Ortigia ideal</span></label></div>
+    <div class="check"><input type="checkbox" id="c8"><label for="c8"><span class="check-title">Ferry Eolias (Liberty Lines)</span><span class="check-detail">Milazzo–Lipari–Vulcano–Milazzo · 26 jul</span></label></div>
+    <div class="check"><input type="checkbox" id="c9"><label for="c9"><span class="check-title">Entradas Teatro Antico Taormina</span><span class="check-detail">Online 16€ · 27 jul</span></label></div>
+    <div class="check"><input type="checkbox" id="c10"><label for="c10"><span class="check-title">Entradas Cattedrale Monreale</span><span class="check-detail">Online · 22 jul tarde</span></label></div>
+    <div class="check"><input type="checkbox" id="c11"><label for="c11"><span class="check-title">Excursión guiada Etna (opcional)</span><span class="check-detail">Funicular + 4x4 + guía · 63€/pax · 28 jul</span></label></div>
+    <div class="check"><input type="checkbox" id="c12"><label for="c12"><span class="check-title">Cena grupo 8 pax · Ortigia</span><span class="check-detail">Reservar para el 29 jul (día de fiesta)</span></label></div>
+    <div class="check"><input type="checkbox" id="c13"><label for="c13"><span class="check-title">Cena grupo 8 pax · Palermo y Taormina</span><span class="check-detail">Las trattorias buenas se llenan</span></label></div>
+    <div class="check"><input type="checkbox" id="c14"><label for="c14"><span class="check-title">Entradas Parco Neapolis Siracusa</span><span class="check-detail">13€ · 29 jul mañana</span></label></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-mark">Buon <span>viaggio.</span></div>
+  <div class="footer-meta">
+    <span>Sicilia · 21–30 julio · MMXXVI</span>
+    <span>9 noches · 8 pax · 5 bases · 996 km</span>
+    <span>Itinerario versión final</span>
+  </div>
+</footer>
+
+<script>
+// Carga robusta de Leaflet: espera a que la librería esté disponible antes de inicializar el mapa
+(function loadLeaflet(){
+  function waitForL(cb, attempts){
+    attempts = attempts || 0;
+    if (typeof L !== 'undefined') { cb(); return; }
+    if (attempts > 100) { document.getElementById('map').innerHTML = '<div style="padding:2rem;text-align:center;font-family:Cormorant Garamond,serif;color:#143042">No se pudo cargar el mapa. Comprueba la conexión a internet.</div>'; return; }
+    setTimeout(function(){ waitForL(cb, attempts+1); }, 100);
+  }
+
+  function loadScript(src, onload){
+    var s = document.createElement('script');
+    s.src = src;
+    s.onload = onload;
+    s.onerror = function(){
+      // Fallback a otro CDN
+      var s2 = document.createElement('script');
+      s2.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+      s2.onload = onload;
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  }
+
+  loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function(){
+    waitForL(initMap);
+  });
+})();
+
+function initMap(){
+// Datos del itinerario para el mapa
+const stops = [
+  {n:'1', name:'Aeropuerto Palermo', day:'D1 · 21 jul', detail:'Llegada 19:10. Recoger coches.', coords:[38.1815, 13.0989]},
+  {n:'1', name:'Palermo centro', day:'D1–2 · 21–22 jul', detail:'Base 1/5 · 2 noches', coords:[38.1146, 13.3616]},
+  {n:'2', name:'Cattedrale di Monreale', day:'D2 · 22 jul', detail:'Mosaicos dorados normandos', coords:[38.0820, 13.2921]},
+  {n:'3', name:'San Vito Lo Capo', day:'D3 · 23 jul', detail:'Playa top de arena blanca', coords:[38.1760, 12.7378]},
+  {n:'3', name:'Scopello', day:'D3 · 23 jul', detail:'Base 2/5 · 1 noche', coords:[38.0715, 12.8216]},
+  {n:'4', name:'Riserva dello Zingaro', day:'D4 · 24 jul', detail:'Calas vírgenes', coords:[38.1224, 12.7851]},
+  {n:'4', name:'Cefalù', day:'D4–5 · 24–25 jul', detail:'Base 3/5 · 2 noches', coords:[38.0350, 14.0212]},
+  {n:'6', name:'Milazzo', day:'D6 · 26 jul', detail:'Base 4/5 · 1 noche · Puerto Eolias', coords:[38.2210, 15.2415]},
+  {n:'6', name:'Lipari', day:'D6 · 26 jul', detail:'Eolias · Pueblo principal', coords:[38.4937, 14.9272]},
+  {n:'6', name:'Vulcano', day:'D6 · 26 jul', detail:'Eolias · Cráter activo', coords:[38.4042, 14.962]},
+  {n:'7', name:'Taormina', day:'D7 · 27 jul', detail:'Base 5/5 · 1 noche · Teatro griego', coords:[37.8545, 15.2889]},
+  {n:'8', name:'Etna · Rifugio Sapienza', day:'D8 · 28 jul', detail:'Subida al volcán activo', coords:[37.7005, 14.9985]},
+  {n:'8', name:'Siracusa · Ortigia', day:'D8–9 · 28–29 jul', detail:'Base 6/6 · 2 noches · Fiesta D9', coords:[37.0609, 15.2941]},
+  {n:'10', name:'Noto', day:'D10 · 30 jul', detail:'Barroco UNESCO', coords:[36.8915, 15.0707]},
+  {n:'10', name:'Modica', day:'D10 · 30 jul', detail:'Chocolate y barroco', coords:[36.8643, 14.7610]},
+  {n:'10', name:'Ragusa Ibla', day:'D10 · 30 jul', detail:'Pueblo de Montalbano', coords:[36.9267, 14.7426]},
+  {n:'10', name:'Aeropuerto Catania', day:'D10 · 30 jul', detail:'Vuelo 17:00 a Madrid', coords:[37.4671, 15.0664]},
+];
+
+const map = L.map('map', {scrollWheelZoom: false}).setView([37.65, 14.05], 8);
+
+// Tile layer con estilo claro tipo papel
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+// Marcadores personalizados
+stops.forEach(s => {
+  const icon = L.divIcon({
+    html: `<div class="custom-marker">${s.n}</div>`,
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+  L.marker(s.coords, {icon}).addTo(map)
+    .bindPopup(`<em>${s.day}</em><strong>${s.name}</strong>${s.detail}`);
+});
+
+// Línea de ruta
+const routeCoords = stops.map(s => s.coords);
+L.polyline(routeCoords, {
+  color:'#c84b31',
+  weight:2.5,
+  opacity:.7,
+  dashArray:'8,6'
+}).addTo(map);
+
+// Habilitar zoom con scroll al hacer click
+map.on('click', () => map.scrollWheelZoom.enable());
+} // fin initMap
+</script>
+
+</body>
+</html>
